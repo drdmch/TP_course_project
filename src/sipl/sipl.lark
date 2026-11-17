@@ -1,0 +1,49 @@
+// SIPL grammar, based on the BNF from the course practicum (pp. 8-9).
+// Extensions: div, mod, 'or'/'not' as aliases for ∨/¬, // comments.
+
+start: program
+
+program: "begin" stmt "end"
+
+// ';' has the lowest priority, so `while b do S1; S2` means `(while b do S1); S2`
+?stmt: simple_stmt
+     | stmt ";" simple_stmt                  -> seq
+
+?simple_stmt: VAR _ASSIGN aexp               -> assign
+            | "if" bexp "then" simple_stmt "else" simple_stmt -> if_stmt
+            | "while" bexp "do" simple_stmt  -> while_stmt
+            | "begin" stmt "end"             -> block
+            | "skip"                         -> skip
+
+?aexp: term
+     | aexp "+" term                         -> add
+     | aexp "-" term                         -> sub
+
+?term: factor
+     | term "*" factor                       -> mul
+     | term "div" factor                     -> div
+     | term "mod" factor                     -> mod
+
+?factor: NUMBER                              -> num
+       | "-" NUMBER                          -> neg_num
+       | VAR                                 -> var
+       | "(" aexp ")"
+
+?bexp: bterm
+     | bexp ("∨" | "or") bterm               -> or_cond
+
+?bterm: ("¬" | "not") bterm                  -> not_cond
+      | batom
+
+?batom: aexp "=" aexp                        -> eq
+      | aexp ">" aexp                        -> gt
+      | "(" bexp ")"
+
+_ASSIGN: ":="
+VAR: /[A-Za-z_][A-Za-z0-9_]*/
+NUMBER: /[0-9]+/
+COMMENT: /\/\/[^\n]*/
+
+%import common.WS
+%ignore WS
+%ignore COMMENT

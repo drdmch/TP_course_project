@@ -1,0 +1,4 @@
+// error-line: 3
+begin
+  if X > Y > Z then skip else skip
+end

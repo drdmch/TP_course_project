@@ -1,0 +1,4 @@
+// ASCII-синоніми: or / not
+begin
+  if not (X > 10) or X = 100 then Ok := 1 else Ok := 0
+end

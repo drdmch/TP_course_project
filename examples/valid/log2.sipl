@@ -1,0 +1,9 @@
+// L = floor(log2 N), N > 0  (використовує розширення div)
+begin
+  L := 0;
+  while N > 1 do
+  begin
+    N := N div 2;
+    L := L + 1
+  end
+end

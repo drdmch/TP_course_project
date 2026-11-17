@@ -1,0 +1,4 @@
+// error-line: 3
+begin
+  1 := X
+end

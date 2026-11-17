@@ -1,0 +1,4 @@
+// A = |X|, від'ємне число в літералі
+begin
+  if 0 > X then A := X * -1 else A := X
+end
