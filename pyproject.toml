@@ -3,19 +3,26 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sipl-toolkit"
-version = "0.3.0"
-description = "Інструменти для навчальної мови SIPL: граматика, парсер, AST, інтерпретатор, семантичні терми"
-readme = "docs/README.md"
+name = "sipl-language-toolkit"
+version = "0.5.0"
+description = "Tools for the SIPL teaching language: grammar, parser, interpreter, trace, semantic terms, tree visualization"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 dependencies = ["lark>=1.1,<2"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Education",
+]
+
+[project.urls]
+Repository = "https://github.com/drdmch/TP_course_project"
 
 [project.scripts]
 sipl = "sipl.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov>=5"]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.5", "build>=1"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sipl"]
@@ -23,3 +30,9 @@ packages = ["src/sipl"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F"]

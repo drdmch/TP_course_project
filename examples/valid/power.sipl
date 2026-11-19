@@ -1,4 +1,4 @@
-// Практикум, с. 10: R = X^Y (X, Y > 0)
+//  R = X^Y (X, Y > 0)
 begin
   R := 1;
   while Y > 0 do

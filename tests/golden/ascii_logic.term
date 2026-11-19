@@ -1,0 +1,1 @@
+IF(S2(or, S1(neg, S2(gr, X⇒, 10)), S2(eq, X⇒, 100)), AS^Ok(1), AS^Ok(0))

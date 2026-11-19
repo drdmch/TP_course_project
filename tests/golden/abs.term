@@ -1,0 +1,1 @@
+IF(S2(gr, 0, X⇒), AS^A(S2(mult, X⇒, -1)), AS^A(X⇒))

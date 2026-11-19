@@ -1,0 +1,25 @@
+Version 0.5.0 (2026-11-18)
+- Parse tree in the course notation (P, S, a, b, x, n with rules P1, S1-S6, A1-A6, B1-B5):
+  sipl tree, formats text / json / dot / svg
+- AST drawing: sipl ast, formats text / json / dot / svg
+- SVG pictures are drawn by the package itself, Graphviz is not needed
+- HTML page with the parse tree next to the AST: sipl compare
+- GitHub Actions: lint and tests on every push and pull request, release on tags
+- Package renamed to sipl-language-toolkit
+
+Version 0.4.0
+- Semantic term of a program built with the NS_* rules: sipl term (--steps shows the rules)
+- Applying a semantic term to a state with the AF_* rules: sipl eval
+- Golden tests with the expected term for every example
+
+Version 0.3.0
+- Command line: sipl parse / check / run / trace, --json output, exit codes 0-4
+
+Version 0.2.0
+- Interpreter with a step limit
+- Execution trace (events before/after statement, variable change, condition check)
+
+Version 0.1.0
+- Lark grammar based on the course BNF
+- Parser with own AST nodes and source positions
+- 12 valid and 12 invalid example programs

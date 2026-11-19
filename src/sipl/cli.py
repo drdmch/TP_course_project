@@ -2,12 +2,14 @@ import argparse
 import json
 import sys
 
-from . import __version__
+from . import __version__, visualization
 from .analysis import find_variables
 from .ast import format_tree, to_dict
 from .diagnostics import SiplSyntaxError
 from .interpreter import DEFAULT_MAX_STEPS, execute
 from .parser import parse
+from .semantics import build_term, evaluate_term
+from .semantics import format_state as format_term_state
 
 EXIT_OK = 0
 EXIT_SYNTAX_ERROR = 1
@@ -30,7 +32,25 @@ def make_arg_parser():
     cmd.add_argument("file")
     cmd.add_argument("--json", action="store_true", help="JSON output")
 
-    for name, help_text in [("run", "run a program"), ("trace", "run and print the trace")]:
+    for name, help_text in [("tree", "draw the parse tree"), ("ast", "draw the AST")]:
+        cmd = commands.add_parser(name, help=help_text)
+        cmd.add_argument("file")
+        cmd.add_argument("--format", choices=["text", "json", "dot", "svg"], default="text")
+        cmd.add_argument("-o", "--output", help="output file")
+        cmd.set_defaults(json=False)
+
+    cmd = commands.add_parser("compare", help="HTML page: parse tree next to AST")
+    cmd.add_argument("file")
+    cmd.add_argument("-o", "--output", help="output .html file")
+    cmd.set_defaults(json=False)
+
+    cmd = commands.add_parser("term", help="build the semantic term")
+    cmd.add_argument("file")
+    cmd.add_argument("--json", action="store_true", help="JSON output")
+    cmd.add_argument("--steps", action="store_true", help="show applied NS_* rules")
+
+    for name, help_text in [("run", "run a program"), ("trace", "run and print the trace"),
+                            ("eval", "apply the semantic term to a state")]:
         cmd = commands.add_parser(name, help=help_text)
         cmd.add_argument("file")
         cmd.add_argument("--json", action="store_true", help="JSON output")
@@ -106,6 +126,67 @@ def trace_line(event):
     return None
 
 
+def write_output(text, path):
+    if path is None:
+        print(text)
+    else:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        print(f"saved to {path}")
+
+
+def draw_command(args, source):
+    try:
+        if args.command == "compare":
+            write_output(visualization.compare_html(source, args.file), args.output)
+            return EXIT_OK
+
+        if args.command == "tree":
+            tree = visualization.build_parse_tree(source)
+        else:
+            tree = visualization.build_ast_tree(source)
+
+        if args.format == "text":
+            text = visualization.to_text(tree)
+            if args.command == "tree":
+                text += "\n\nleaves: " + " ".join(visualization.leaves(tree))
+        elif args.format == "json":
+            text = visualization.to_json(tree)
+        elif args.format == "dot":
+            text = visualization.to_dot(tree, title=args.command)
+        else:
+            text = visualization.to_svg(tree)
+        write_output(text, args.output)
+        return EXIT_OK
+    except OSError:
+        print(f"sipl: error: cannot write file '{args.output}'", file=sys.stderr)
+        return EXIT_USAGE
+
+
+def eval_command(args, program, state):
+    term, _ = build_term(program)
+    result = evaluate_term(term, state, args.max_steps)
+    if result["status"] == "defined":
+        code = EXIT_OK
+    elif result["status"] == "step_limit":
+        code = EXIT_STEP_LIMIT
+    else:
+        code = EXIT_RUNTIME_ERROR
+
+    if args.json:
+        print_json("eval", args.file, code == EXIT_OK, [], **result)
+        return code
+
+    print("term: " + result["term"])
+    for item in result["trace"]:
+        print("  " * item["depth"] + f"{item['rule']}: {item['text']}")
+    if code == EXIT_OK:
+        print(f"result: {result['final_name']} = {format_term_state(result['state'])}")
+    else:
+        print("result: undefined, " + result["reason"])
+    return code
+
+
 def main(argv=None):
     args = make_arg_parser().parse_args(argv)
 
@@ -124,6 +205,9 @@ def main(argv=None):
             print(e.diagnostic.format(source, args.file), file=sys.stderr)
         return EXIT_SYNTAX_ERROR
 
+    if args.command in ["tree", "ast", "compare"]:
+        return draw_command(args, source)
+
     if args.command == "parse":
         if args.json:
             print_json("parse", args.file, True, [], ast=to_dict(program))
@@ -141,11 +225,26 @@ def main(argv=None):
             print("assigned: " + (", ".join(variables["assigned"]) or "-"))
         return EXIT_OK
 
+    if args.command == "term":
+        term, steps = build_term(program)
+        if args.json:
+            print_json("term", args.file, True, [], term=str(term), steps=steps)
+        else:
+            if args.steps:
+                for step in steps:
+                    print(f"{step['rule']}: {step['left']} = {step['right']}")
+                print()
+            print(term)
+        return EXIT_OK
+
     state, error = parse_set_options(args.set)
     if error:
         return usage_error(args, error)
     if args.max_steps < 1:
         return usage_error(args, "--max-steps must be positive")
+
+    if args.command == "eval":
+        return eval_command(args, program, state)
 
     result = execute(program, state, args.max_steps)
     if result["status"] == "ok":
